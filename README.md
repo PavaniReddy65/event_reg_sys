@@ -43,16 +43,16 @@ This web application allows users to register, login, browse available events, a
 ## Screenshots
 
 ### Registration Form
-![Registration Form](screenshots/register-form.png)
+![Register Form](screenshots/register-form.jpg)
 
 ### Login Form
-![Login Form](screenshots/login-form.png)
+![Login Form](screenshots/login-form.jpg)
 
 ### Events List
-![Events List](screenshots/events-list.png)
+![Events List](screenshots/events-list.jpg)
 
 ### Event Registration Success
-![Registration Success](screenshots/registration-success.png)
+![Registration Success](screenshots/registration-success.jpg)
 
 ---
 
