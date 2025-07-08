@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Event Registration</title>
+  <style>
+    /* Your existing CSS styles here (same as before) */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f5f7fa;
+      margin: 0;
+      padding: 0;
+    }
+    nav {
+      background-color: #2c3e50;
+      color: white;
+      padding: 12px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    nav .brand {
+      font-weight: 700;
+      font-size: 1.4em;
+    }
+    nav .nav-links a {
+      color: white;
+      text-decoration: none;
+      margin-left: 25px;
+      font-weight: 600;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    nav .nav-links a:hover {
+      color: #18bc9c;
+    }
+    .container {
+      max-width: 400px;
+      margin: 50px auto;
+      background: white;
+      padding: 30px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      border-radius: 8px;
+    }
+    h2 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 25px;
+      font-weight: 700;
+    }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 6px;
+      border: 1.8px solid #ccc;
+      font-size: 1em;
+    }
+    input:focus {
+      border-color: #18bc9c;
+      outline: none;
+    }
+    button {
+      background-color: #18bc9c;
+      color: white;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #15a589;
+    }
+    #eventsDiv {
+      max-width: 800px;
+      margin: 40px auto;
+    }
+    .event-card {
+      background-color: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .event-card h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+    .event-card p {
+      color: #555;
+    }
+    .event-card button {
+      background-color: #2c3e50;
+      width: auto;
+      padding: 10px 20px;
+    }
+    .event-card button:hover {
+      background-color: #34495e;
+    }
+    .event-card button[disabled] {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    #welcomeDiv {
+      max-width: 800px;
+      margin: 20px auto;
+      font-size: 1.15em;
+      color: #2c3e50;
+      text-align: center;
+    }
+    #welcomeDiv a {
+      color: #18bc9c;
+      font-weight: 700;
+      margin-left: 15px;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">EventRegSys</div>
+  <div class="nav-links">
+    <a href="#" onclick="showLogin()">Login</a>
+    <a href="#" onclick="showRegister()">Register</a>
+    <a href="#" onclick="showEvents()">Events</a>
+  </div>
+</nav>
+
+<div id="welcomeDiv" style="display:none;">
+  Welcome, <span id="usernameDisplay"></span> | <a href="#" onclick="logout()">Logout</a>
+</div>
+
+<div class="container" id="loginDiv" style="display:none;">
+  <h2>Login</h2>
+  <form id="loginForm">
+    <input type="text" id="loginUsername" placeholder="Username" required>
+    <input type="password" id="loginPassword" placeholder="Password" required>
+    <button type="submit">Login</button>
+  </form>
+</div>
+
+<div class="container" id="registerDiv" style="display:none;">
+  <h2>Register</h2>
+  <form id="registerForm">
+    <input type="text" id="regUsername" placeholder="Username" required>
+    <input type="email" id="regEmail" placeholder="Email" required>
+    <input type="password" id="regPassword" placeholder="Password" required>
+    <button type="submit">Register</button>
+  </form>
+</div>
+
+<div id="eventsDiv" style="display:none;">
+  <h2 style="text-align:center;">Available Events</h2>
+  <div id="events"></div>
+</div>
+
+<script>
+  let token = "";
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        cookie = cookie.trim();
+        if (cookie.startsWith(name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  const csrftoken = getCookie('csrftoken');
+
+  function showLogin() {
+    document.getElementById('welcomeDiv').style.display = 'none';
+    document.getElementById('loginDiv').style.display = 'block';
+    document.getElementById('registerDiv').style.display = 'none';
+    document.getElementById('eventsDiv').style.display = 'none';
+  }
+
+  function showRegister() {
+    document.getElementById('welcomeDiv').style.display = 'none';
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('registerDiv').style.display = 'block';
+    document.getElementById('eventsDiv').style.display = 'none';
+  }
+
+  function showEvents() {
+    document.getElementById('loginDiv').style.display = 'none';
+    document.getElementById('registerDiv').style.display = 'none';
+    document.getElementById('eventsDiv').style.display = 'block';
+    document.getElementById('welcomeDiv').style.display = token ? 'block' : 'none';
+    fetchEvents();
+  }
+
+  document.getElementById('loginForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const response = await fetch("/api/login/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken
+      },
+      body: JSON.stringify({
+        username: document.getElementById("loginUsername").value.trim(),
+        password: document.getElementById("loginPassword").value.trim(),
+      }),
+    });
+    if (response.ok) {
+      const data = await response.json();
+      token = data.token;
+      alert("Logged in successfully");
+      document.getElementById('usernameDisplay').innerText = document.getElementById("loginUsername").value.trim();
+      showEvents();
+    } else {
+      alert("Login failed! Check username/password.");
+    }
+  };
+
+  document.getElementById('registerForm').onsubmit = async function(e) {
+    e.preventDefault();
+    const response = await fetch("/api/register/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrftoken
+      },
+      body: JSON.stringify({
+        username: document.getElementById("regUsername").value.trim(),
+        email: document.getElementById("regEmail").value.trim(),
+        password: document.getElementById("regPassword").value.trim(),
+      }),
+    });
+    if (response.ok) {
+      alert("Registration successful! Please login now.");
+      showLogin();
+    } else {
+      const errorData = await response.json();
+      alert("Registration failed: " + (errorData.error || "Unknown error"));
+    }
+  };
+
+  async function fetchEvents() {
+    const res = await fetch("/api/events/", {
+      headers: {
+        "Authorization": "Token " + token
+      }
+    });
+    if (!res.ok) {
+      alert("Failed to load events");
+      return;
+    }
+    const events = await res.json();
+    const eventsDiv = document.getElementById("events");
+    eventsDiv.innerHTML = "";
+    events.forEach(event => {
+      eventsDiv.innerHTML += `
+        <div class="event-card">
+          <h3>${event.title}</h3>
+          <p>${event.description}</p>
+          <button ${token ? `onclick="registerEvent(${event.id}, this)"` : 'disabled title="Login to register"'}>Register</button>
+        </div>
+      `;
+    });
+  }
+
+  async function registerEvent(event_id, btn) {
+    const res = await fetch("/api/registrations/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Token " + token,
+        "X-CSRFToken": csrftoken
+      },
+      body: JSON.stringify({ event_id: event_id }),
+    });
+    if (res.status === 201) {
+      alert("Registered successfully!");
+      btn.disabled = true;
+      btn.innerText = "Registered";
+      btn.style.backgroundColor = '#ccc';
+      btn.style.cursor = 'not-allowed';
+    } else {
+      const errorData = await res.json();
+      alert("Error registering for event: " + (errorData.error || "Unknown error"));
+    }
+  }
+
+  function logout() {
+    token = "";
+    document.getElementById('welcomeDiv').style.display = 'none';
+    showEvents();
+  }
+
+  // Show events on first load
+  showEvents();
+
+</script>
+
+</body>
+</html>
